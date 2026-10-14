@@ -30,6 +30,31 @@ const isTrue = x => x === true || String(x).toUpperCase() === 'TRUE';
 const ms = x => x instanceof Date ? x.getTime() : (+x || '');
 const asDate = x => (typeof x === 'number' && x > 1e11) ? new Date(x) : x;
 
+/* başlıq adlarından sütun yerlərini tapır (köhnə və yeni adlar) */
+function colMap(hv) {
+  const ALT = [['tel', 'telefon', 'nömrə', 'nomre', 'phone'], ['ad', 'name'], ['soyad', 'surname'], ['rol', 'role'], ['qeyd', 'qeydiyyat', 'qeydiyyat tarixi', 'at'], ['son', 'son giriş', 'son giris', 'last'], ['blok', 'bloklanıb', 'block'], ['sayt', 'site'], ['elaqe', 'əlaqə saxlanılıb', 'elaqe saxlanilib']];
+  const h = hv.map(x => String(x).trim().toLowerCase());
+  return ALT.map(a => { for (const k of a) { const i = h.indexOf(k); if (i >= 0) return i; } return -1; });
+}
+/* başqa vərəqlərdə qalmış köhnə istifadəçiləri Users-ə köçürür (təkrarlamadan) */
+function usersImport(s) {
+  const ss = SpreadsheetApp.getActive();
+  const have = new Set(s.getLastRow() > 1 ? s.getRange(2, 1, s.getLastRow() - 1, 1).getValues().map(r => String(r[0])) : []);
+  const add = [];
+  ss.getSheets().forEach(sh => {
+    const nm = sh.getName();
+    if (/^users/i.test(nm) || /config|results/i.test(nm) || sh.getLastRow() < 2 || sh.getLastColumn() < 1) return;
+    const v = sh.getDataRange().getValues(), idx = colMap(v[0]);
+    if (idx[0] < 0 || idx[1] < 0) return;
+    v.slice(1).forEach(r => {
+      const tel = String(r[idx[0]] || '').replace(/\D/g, '').replace(/^994/, '').replace(/^0/, '');
+      if (!tel || have.has(tel)) return;
+      have.add(tel);
+      add.push(idx.map((i, j) => j === 0 ? "'" + tel : i < 0 ? (j === 6 ? false : '') : r[i]));
+    });
+  });
+  if (add.length) s.getRange(s.getLastRow() + 1, 1, add.length, UL.length).setValues(add);
+}
 function usersSheet() {
   const ss = SpreadsheetApp.getActive();
   let s = ss.getSheetByName('Users');
@@ -38,10 +63,11 @@ function usersSheet() {
   const hv = s.getRange(1, 1, 1, w).getValues()[0].map(String);
   if (hv.slice(0, UL.length).join('|') !== UL.join('|')) {
     /* köhnə başlıqlar (tel, ad, soyad, rol, qeyd, son, blok, sayt, elaqe) → yeni düzülüş */
-    const KEYS = ['tel', 'ad', 'soyad', 'rol', 'qeyd', 'son', 'blok', 'sayt', 'elaqe'];
-    const idx = UL.map((lab, j) => { let i = hv.indexOf(KEYS[j]); if (i < 0) i = hv.indexOf(lab); return i; });
+    const idx = colMap(hv);
     const n = s.getLastRow() - 1;
-    if (n > 0 && idx[0] >= 0 && idx.some((i, j) => i !== j)) {
+    if (n > 0 && !ss.getSheetByName('Users yedək')) s.copyTo(ss).setName('Users yedək');
+    if (n > 0 && idx[0] < 0) return s; /* tanınmayan format: heç nəyə toxunma */
+    if (n > 0 && idx.some((i, j) => i !== j)) {
       const all = s.getRange(2, 1, n, w).getValues();
       const nv = all.map(r => idx.map(i => i < 0 ? '' : r[i]));
       s.getRange(2, 1, n, Math.max(w, UL.length)).clearContent();
@@ -65,6 +91,7 @@ function usersFix(s) {
   s.getRange(2, 7, n, 1).insertCheckboxes();
 }
 function usersRows(s) {
+  usersImport(s);
   usersFix(s);
   const v = s.getDataRange().getValues(); v.shift();
   return v.filter(r => r[0] !== '').map(r => ({ tel: String(r[0]), ad: r[1], soyad: r[2], rol: r[3], qeyd: ms(r[4]), son: ms(r[5]), blok: isTrue(r[6]), sayt: r[7], elaqe: ms(r[8]) }));
