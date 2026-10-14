@@ -32,9 +32,18 @@ const asDate = x => (typeof x === 'number' && x > 1e11) ? new Date(x) : x;
 
 /* başlıq adlarından sütun yerlərini tapır (köhnə və yeni adlar) */
 function colMap(hv) {
-  const ALT = [['tel', 'telefon', 'nömrə', 'nomre', 'phone'], ['ad', 'name'], ['soyad', 'surname'], ['rol', 'role'], ['qeyd', 'qeydiyyat', 'qeydiyyat tarixi', 'at'], ['son', 'son giriş', 'son giris', 'last'], ['blok', 'bloklanıb', 'block'], ['sayt', 'site'], ['elaqe', 'əlaqə saxlanılıb', 'elaqe saxlanilib']];
-  const h = hv.map(x => String(x).trim().toLowerCase());
-  return ALT.map(a => { for (const k of a) { const i = h.indexOf(k); if (i >= 0) return i; } return -1; });
+  const h = hv.map(x => String(x).trim().toLowerCase().replace(/\(.*?\)/g, '').trim());
+  const T = [
+    k => /^(tel|telefon|nömrə|nomre|phone)/.test(k),
+    k => k === 'ad' || k === 'name',
+    k => k === 'soyad' || k === 'surname',
+    k => k === 'rol' || k === 'role' || k.includes('müəllim'),
+    k => k === 'qeyd' || k.startsWith('qeydiyyat') || k === 'at',
+    k => k === 'son' || k.startsWith('son giri') || k === 'last',
+    k => k === 'blok' || k.startsWith('blok') || k === 'block',
+    k => k === 'sayt' || k === 'site',
+    k => k === 'elaqe' || k.startsWith('əlaqə') || k.startsWith('elaqe')];
+  return T.map(f => h.findIndex(f));
 }
 /* başqa vərəqlərdə qalmış köhnə istifadəçiləri Users-ə köçürür (təkrarlamadan) */
 function usersImport(s) {
