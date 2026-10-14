@@ -69,6 +69,7 @@
 .tbtn.ok{background:#25A55A;border-color:#25A55A;color:#fff}
 .tbtn.rm{background:#D9364C;border-color:#D9364C;color:#fff}
 .askrow{display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap}
+.tag.grn{background:#1E8E4E;color:#fff;border-color:#1E8E4E}
 </style>
 </head><body>
 
@@ -616,19 +617,30 @@ async function tUsers(reload){
   const td=L.filter(u=>now-(+u.son||0)<day).length,wk=L.filter(u=>now-(+u.son||0)<7*day).length;
   let h=thdr('İstifadəçilər',L.length+' nəfər',tHome);
   if(TU.err)h+=`<p class="perr">${esc(TU.err)}</p>`;
-  h+=`<div class="statrow">${[['Cəmi',L.length],['Tələbə',tl],['Müəllim',mu],['Bu gün',td],['Bu həftə',wk],['Bloklanıb',bl]].map(([a,b])=>`<div><small>${a}</small><b>${b}</b></div>`).join('')}</div>`;
-  h+=`<div class="hrow"><button class="hbtn" data-act="reload">↻ Yenilə</button>${['','Tələbə','Müəllim','Blok'].map(f=>`<button class="hbtn ${TU.f===f?'':'gh'}" data-f="${f}">${f==='Blok'?'🚫 Bloklananlar':f||'Hamısı'}</button>`).join('')}</div>`;
+  h+=`<div class="statrow">${[['Cəmi',L.length],['Tələbə',tl],['Müəllim',mu],['Bu gün',td],['Bu həftə',wk],['Bloklanıb',bl],['Əlaqə saxlanılıb',L.filter(u=>u.elaqe).length]].map(([a,b])=>`<div><small>${a}</small><b>${b}</b></div>`).join('')}</div>`;
+  h+=`<div class="hrow"><button class="hbtn" data-act="reload">↻ Yenilə</button>${['','Tələbə','Müəllim','Blok','Elaqesiz'].map(f=>`<button class="hbtn ${TU.f===f?'':'gh'}" data-f="${f}">${f==='Blok'?'🚫 Bloklananlar':f==='Elaqesiz'?'📞 Əlaqə saxlanılmayanlar':f||'Hamısı'}</button>`).join('')}</div>`;
   if(TU.msg)h+=`<p class="tmsg">${esc(TU.msg)}</p>`;
   h+=`<input class="tsearch" id="tsq" placeholder="Axtar: ad, soyad, telefon…" value="${esc(TU.q)}">`;
-  const rows=L.filter(u=>(!TU.f||(TU.f==='Blok'?u.blok:u.rol===TU.f))&&(!q||[u.ad,u.soyad,u.tel].join(' ').toLowerCase().includes(q))).sort((a,b)=>(+b.son||0)-(+a.son||0));
-  h+=`<div class="tlist">`+rows.map(u=>`<div class="titem${u.blok?' blk':''}"><span><b>${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}<br><small>+994 ${esc(u.tel)}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${esc(u.tel)}">📞</a><a class="tbtn ok" href="https://wa.me/994${esc(u.tel)}" target="_blank" rel="noopener">💬</a>${TU.ask===String(u.tel)?`<div class="askrow"><b>${u.blok?'Bloku açmaq':'Bloklamaq'} istəyirsiniz?</b><button class="tbtn ${u.blok?'ok':'rm'}" data-yes="${esc(u.tel)}" data-v="${!u.blok}">Bəli</button><button class="tbtn" data-no="1">Xeyr</button></div>`:`<button class="tbtn ${u.blok?'ok':'rm'}" data-ask="${esc(u.tel)}">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button>`}</div>`).join('')+(rows.length?'':'<p class="hnote">Hələ heç kim yoxdur.</p>')+`</div>`;
+  const rows=L.filter(u=>(!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Elaqesiz'?!u.elaqe:u.rol===TU.f))&&(!q||[u.ad,u.soyad,u.tel].join(' ').toLowerCase().includes(q))).sort((a,b)=>(+b.son||0)-(+a.son||0));
+  h+=`<div class="tlist">`+rows.map(u=>`<div class="titem${u.blok?' blk':''}"><span><b${u.elaqe?' style="color:#1E8E4E"':''}>${u.elaqe?'✓ ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${u.elaqe?` <em class="tag grn">✓ Əlaqə saxlanılıb · ${dOnly(u.elaqe)}</em>`:''}<br><small>+994 ${esc(u.tel)}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${esc(u.tel)}">📞</a><a class="tbtn ok" href="https://wa.me/994${esc(u.tel)}" target="_blank" rel="noopener">💬</a><button class="tbtn${u.elaqe?'':' ok'}" data-el="${esc(u.tel)}" data-v="${!u.elaqe}">${u.elaqe?'↺ Əlaqəni geri al':'✓ Əlaqə saxlanılıb'}</button>${TU.ask===String(u.tel)?`<div class="askrow"><b>${u.blok?'Bloku açmaq':'Bloklamaq'} istəyirsiniz?</b><button class="tbtn ${u.blok?'ok':'rm'}" data-yes="${esc(u.tel)}" data-v="${!u.blok}">Bəli</button><button class="tbtn" data-no="1">Xeyr</button></div>`:`<button class="tbtn ${u.blok?'ok':'rm'}" data-ask="${esc(u.tel)}">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button>`}</div>`).join('')+(rows.length?'':'<p class="hnote">Hələ heç kim yoxdur.</p>')+`</div>`;
   screen(h);bindT(tHome);
   X.querySelector('[data-act="reload"]').onclick=()=>tUsers(true);
   X.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{TU.f=b.dataset.f;tUsers()});
   X.querySelectorAll('[data-ask]').forEach(b=>b.onclick=()=>{TU.ask=b.dataset.ask;TU.msg='';tUsers()});
   X.querySelectorAll('[data-no]').forEach(b=>b.onclick=()=>{TU.ask='';tUsers()});
+  X.querySelectorAll('[data-el]').forEach(b=>b.onclick=()=>tElaqe(b.dataset.el,b.dataset.v==='true'));
   X.querySelectorAll('[data-yes]').forEach(b=>b.onclick=()=>tBlock(b.dataset.yes,b.dataset.v==='true'));
   const s=$('tsq');s.oninput=()=>{TU.q=s.value;clearTimeout(window._tq);window._tq=setTimeout(()=>{tUsers();const i=$('tsq');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)};
+}
+async function tElaqe(tel,v){
+  const key=lsGet('e511-tkey','');TU.ask='';
+  if(!key){TU.msg='Əvvəlcə "Cədvəl açarı"nı daxil edin.';return tUsers()}
+  TU.msg='Yadda saxlanılır…';tUsers();
+  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'elaqe',key,tel,v})});const o=await r.json();
+    if(!o.ok)throw new Error(o.error||'x');
+    (TU.list||[]).forEach(u=>{if(String(u.tel)===String(tel))u.elaqe=v?(o.t||Date.now()):''});TU.msg=v?'✓ Əlaqə saxlanılıb kimi işarələndi.':'İşarə götürüldü.';
+  }catch(e){const m=String(e&&e.message);TU.msg=m==='key'?'Cədvəl açarı səhvdir.':'Alınmadı: '+m}
+  tUsers();
 }
 async function tBlock(tel,v){
   const key=lsGet('e511-tkey','');TU.ask='';

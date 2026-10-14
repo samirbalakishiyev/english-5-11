@@ -5,7 +5,7 @@
    2) Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone (Все). */
 const KEY = 'BURAYA-OZ-ACARINIZI-YAZIN';
 
-const UH = ['tel', 'ad', 'soyad', 'rol', 'qeyd', 'son', 'blok', 'sayt'];
+const UH = ['tel', 'ad', 'soyad', 'rol', 'qeyd', 'son', 'blok', 'sayt', 'elaqe'];
 const CH = ['g', 'yenilenib', 'json'];
 const PART = 45000; // bir xanaya sığan hissə
 
@@ -13,6 +13,7 @@ function sh(name, head) {
   const ss = SpreadsheetApp.getActive();
   let s = ss.getSheetByName(name);
   if (!s) { s = ss.insertSheet(name); s.appendRow(head); s.setFrozenRows(1); }
+  if (s.getLastColumn() < head.length) s.getRange(1, 1, 1, head.length).setValues([head]);
   return s;
 }
 function out(o) {
@@ -84,6 +85,15 @@ function doPost(e) {
       return out({ ok: true, blok: val[6] === true || String(val[6]).toUpperCase() === 'TRUE' });
     }
     if (o.key !== KEY) return out({ ok: false, error: 'key' });
+    if (o.a === 'elaqe') {
+      if (o.key !== KEY) return out({ ok: false, error: 'key' });
+      const s = sh('Users', UH);
+      const r = findRow(s, o.tel);
+      if (!r) return out({ ok: false, error: 'tel' });
+      const t = o.v ? now : '';
+      s.getRange(r, 9).setValue(t);
+      return out({ ok: true, t: t });
+    }
     if (o.a === 'block') {
       const s = sh('Users', UH);
       const r = findRow(s, o.tel);
