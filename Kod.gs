@@ -34,8 +34,22 @@ function usersSheet() {
   const ss = SpreadsheetApp.getActive();
   let s = ss.getSheetByName('Users');
   if (!s) { s = ss.insertSheet('Users'); s.setFrozenRows(1); }
-  const h = s.getRange(1, 1, 1, UL.length);
-  if (String(h.getValues()[0].join('|')) !== UL.join('|')) h.setValues([UL]).setFontWeight('bold');
+  const w = Math.max(s.getLastColumn(), 1);
+  const hv = s.getRange(1, 1, 1, w).getValues()[0].map(String);
+  if (hv.slice(0, UL.length).join('|') !== UL.join('|')) {
+    /* köhnə başlıqlar (tel, ad, soyad, rol, qeyd, son, blok, sayt, elaqe) → yeni düzülüş */
+    const KEYS = ['tel', 'ad', 'soyad', 'rol', 'qeyd', 'son', 'blok', 'sayt', 'elaqe'];
+    const idx = UL.map((lab, j) => { let i = hv.indexOf(KEYS[j]); if (i < 0) i = hv.indexOf(lab); return i; });
+    const n = s.getLastRow() - 1;
+    if (n > 0 && idx[0] >= 0 && idx.some((i, j) => i !== j)) {
+      const all = s.getRange(2, 1, n, w).getValues();
+      const nv = all.map(r => idx.map(i => i < 0 ? '' : r[i]));
+      s.getRange(2, 1, n, Math.max(w, UL.length)).clearContent();
+      s.getRange(2, 1, n, UL.length).setValues(nv);
+    }
+    s.getRange(1, 1, 1, Math.max(w, UL.length)).clearContent();
+    s.getRange(1, 1, 1, UL.length).setValues([UL]).setFontWeight('bold');
+  }
   return s;
 }
 /* köhnə sətirləri düzəldir: uzun rəqəmlər → tarix, TRUE/FALSE → qutucuq */
