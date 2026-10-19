@@ -605,11 +605,11 @@ function tHome(){
    <p class="hnote">Söz və tapşırıqları düzəltmək üçün sinfə daxil olun → aşağıdakı «🔒 Müəllim paneli». Saxladığınız dəyişikliklər Google Cədvələ yazılır və bütün şagirdlərdə görünür.</p>`);
   bindT();$('tu').onclick=()=>{TU.q='';tUsers()};$('tk').onclick=tKey;TMSG='';
 }
-let TU={list:null,q:'',f:'',r:'',err:'',msg:'',px:new Set(),pxOk:false};
+let TU={list:null,q:'',f:'Yeni',r:'',err:'',msg:'',px:new Set(),pxOk:false};
 const OTHER_URL='https://script.google.com/macros/s/AKfycby-l8bfI4EZElFAOMaEOvYCJgJXMUX85Y2oI73CaSkS0oPZFpKkkKOHV_pNtYdk818/exec'; /* My New Vocabulary cədvəli: premium ortaqdır */
 function tKey(){
   screen(thdr('Cədvəl açarı','Bir dəfə daxil edin',tHome)+`<form class="tlogin" id="tkf"><input id="tkey" type="password" autocomplete="off" placeholder="Açar" value="${esc(lsGet('e511-tkey',''))}"><button class="hbtn" type="submit">Yadda saxla</button></form><p class="hnote">Açar Google Cədvəlin skriptindədir (KEY). Şagirdlərə verməyin.</p>`);
-  bindT(tHome);$('tkf').onsubmit=e=>{e.preventDefault();lsSet('e511-tkey',$('tkey').value.trim());TU={list:null,q:'',f:'',r:'',err:'',msg:'',px:new Set(),pxOk:false};TMSG='Açar yadda saxlandı.';tHome()};
+  bindT(tHome);$('tkf').onsubmit=e=>{e.preventDefault();lsSet('e511-tkey',$('tkey').value.trim());TU={list:null,q:'',f:'Yeni',r:'',err:'',msg:'',px:new Set(),pxOk:false};TMSG='Açar yadda saxlandı.';tHome()};
 }
 async function tFetch(){
   const key=lsGet('e511-tkey','');TU.err='';
@@ -627,6 +627,9 @@ async function tPremX(){
     if(o&&Array.isArray(o.tels)){TU.px=new Set(o.tels.map(String));TU.pxOk=true}}catch(e){}
 }
 const isPrem=u=>!!u.prem||TU.px.has(String(u.tel));
+/* 💳 Ödəniş: "elaqe" sütunu indi ödəniş tarixini saxlayır; bu tarixdən əvvəlki köhnə "Əlaqə saxlanılıb" işarələri sayılmır */
+const PAY_FROM=1792436563700;
+const isPaid=u=>(+u.elaqe||0)>=PAY_FROM, isPay=u=>isPaid(u)&&!u.blok, isNew=u=>!u.blok&&!isPaid(u);
 async function tUsers(reload){
   const same=!X.hidden&&!!$('tuList'),y=window.scrollY;
   if(!TU.list||reload){if(!same){screen(thdr('İstifadəçilər','Yüklənir…',tHome));bindT(tHome)}else toast('Yenilənir…');await Promise.all([tFetch(),tPremX()])}
@@ -635,13 +638,13 @@ async function tUsers(reload){
   const td=L.filter(u=>now-(+u.son||0)<day).length,wk=L.filter(u=>now-(+u.son||0)<7*day).length;
   let h=thdr('İstifadəçilər',L.length+' nəfər',tHome);
   if(TU.err)h+=`<p class="perr">${esc(TU.err)}</p>`;
-  h+=`<div class="statrow">${[['Cəmi',L.length],['Tələbə',tl],['Müəllim',mu],['Bu gün',td],['Bu həftə',wk],['Bloklanıb',bl],['Əlaqə saxlanılıb',L.filter(u=>u.elaqe).length],['👑 Premium',L.filter(isPrem).length]].map(([a,b])=>`<div><small>${a}</small><b>${b}</b></div>`).join('')}</div>`;
+  h+=`<div class="statrow">${[['Cəmi',L.length],['Tələbə',tl],['Müəllim',mu],['Bu gün',td],['Bu həftə',wk],['Bloklanıb',bl],['🆕 Yeni',L.filter(isNew).length],['💳 Ödəniş edib',L.filter(isPay).length],['👑 Premium',L.filter(isPrem).length]].map(([a,b])=>`<div><small>${a}</small><b>${b}</b></div>`).join('')}</div>`;
   h+=`<div class="hrow" style="align-items:center;margin-bottom:8px"><button class="hbtn" data-act="reload">↻ Yenilə</button><b>Rol:</b>${[['','Hamısı'],['Tələbə','🎓 Tələbə'],['Müəllim','👩‍🏫 Müəllim']].map(([f,l])=>`<button class="hbtn ${TU.r===f?'':'gh'}" data-r="${f}">${l}</button>`).join('')}</div>`;
-  h+=`<div class="hrow" style="align-items:center"><b>Status:</b>${[['','Hamısı'],['Blok','🚫 Bloklananlar'],['Aciq','✅ Bloklanmayanlar'],['Elaqesiz','📞 Əlaqə saxlanılmayanlar'],['Prem','👑 Premium']].map(([f,l])=>`<button class="hbtn ${TU.f===f?'':'gh'}" data-f="${f}">${l}</button>`).join('')}</div>`;
+  h+=`<div class="hrow" style="align-items:center"><b>Status:</b>${[['Yeni','🆕 Yeni qoşulanlar ('+L.filter(isNew).length+')'],['Pay','💳 Ödəniş edənlər ('+L.filter(isPay).length+')'],['Blok','🚫 Bloklananlar ('+bl+')'],['','Hamısı'],['Prem','👑 Premium']].map(([f,l])=>`<button class="hbtn ${TU.f===f?'':'gh'}" data-f="${f}">${l}</button>`).join('')}</div>`;
   h+=`<input class="tsearch" id="tsq" placeholder="Axtar: ad, soyad, telefon…" value="${esc(TU.q)}">`;
-  const okF=u=>!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Aciq'?!u.blok:TU.f==='Elaqesiz'?!u.elaqe:TU.f==='Prem'?isPrem(u):true);
+  const okF=u=>!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Yeni'?isNew(u):TU.f==='Pay'?isPay(u):TU.f==='Prem'?isPrem(u):true);
   const rows=L.filter(u=>(!TU.r||u.rol===TU.r)&&okF(u)&&(!q||[u.ad,u.soyad,u.tel].join(' ').toLowerCase().includes(q))).sort((a,b)=>(+b.son||0)-(+a.son||0));
-  h+=`<p class="hnote" style="margin:0 0 8px">Göstərilir: ${rows.length}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel),pr=isPrem(u);return `<div class="titem${u.blok?' blk':''}"><span><b${u.elaqe?' style="color:#1E8E4E"':''}>${u.elaqe?'✓ ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${pr?' <em class="tag gold">👑 Premium</em>':''}${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${u.elaqe?` <em class="tag grn">✓ Əlaqə saxlanılıb · ${dOnly(u.elaqe)}</em>`:''}<br><small>+994 ${t}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener" data-wa="${t}">💬</a><button class="tbtn${u.elaqe?'':' ok'}" data-set="elaqe" data-tel="${t}" data-v="${!u.elaqe}">${u.elaqe?'↺ Əlaqəni geri al':'✓ Əlaqə saxlanılıb'}</button><button class="tbtn ${pr?'gold':'goldo'}" data-set="premium" data-tel="${t}" data-v="${!pr}">${pr?'👑 Premiumu götür':'👑 Premium et'}</button><button class="tbtn ${u.blok?'ok':'rm'}" data-set="block" data-tel="${t}" data-v="${!u.blok}">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="hnote">Bu filtrdə heç kim yoxdur.</p>')+`</div>`;
+  h+=`<p class="hnote" style="margin:0 0 8px">Göstərilir: ${rows.length}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel),pr=isPrem(u);return `<div class="titem${u.blok?' blk':''}"><span><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${pr?' <em class="tag gold">👑 Premium</em>':''}${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${isPaid(u)?` <em class="tag grn">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}<br><small>+994 ${t}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener" data-wa="${t}">💬</a><button class="tbtn${isPaid(u)?'':' ok'}" data-set="elaqe" data-tel="${t}" data-v="${!isPaid(u)}">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${pr?'gold':'goldo'}" data-set="premium" data-tel="${t}" data-v="${!pr}">${pr?'👑 Premiumu götür':'👑 Premium et'}</button><button class="tbtn ${u.blok?'ok':'rm'}" data-set="block" data-tel="${t}" data-v="${!u.blok}">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="hnote">Bu filtrdə heç kim yoxdur.</p>')+`</div>`;
   if(same){X.innerHTML=h}else screen(h);
   bindT(tHome);
   X.querySelector('[data-act="reload"]').onclick=()=>tUsers(true);
@@ -653,7 +656,7 @@ async function tUsers(reload){
   if(same)window.scrollTo(0,y);
 }
 /* bir klik: ekranda dərhal dəyişir (sual yoxdur, səhifə sürüşmür), sonra cədvələ yazılır; alınmasa geri qaytarılır */
-function tWa(tel){setTimeout(()=>{const u=(TU.list||[]).find(x=>String(x.tel)===String(tel));if(u&&!u.elaqe)tSet('elaqe',tel,true)},300)}
+function tWa(tel){} /* WhatsApp düyməsi heç nəyi avtomatik dəyişmir */
 async function tSet(a,tel,v){
   const key=lsGet('e511-tkey','');
   if(!key){toast('Əvvəlcə "Cədvəl açarı"nı daxil edin.');return}
@@ -665,7 +668,7 @@ async function tSet(a,tel,v){
   try{const o=await post(SHEET_URL);if(!o.ok)throw new Error(o.error||'x');
     if(a==='elaqe'&&v&&o.t)u.elaqe=o.t;
     if(a==='premium'&&TU.pxOk){post(OTHER_URL).then(o2=>{if(o2&&o2.ok){v?TU.px.add(String(tel)):TU.px.delete(String(tel))}}).catch(()=>{})}
-    toast(a==='block'?(v?'🚫 Bloklandı':'✅ Blok açıldı'):a==='premium'?(v?'👑 Premium açıldı — hər iki saytda':'Premium götürüldü'):(v?'✓ Əlaqə saxlanılıb':'Əlaqə işarəsi götürüldü'));
+    toast(a==='block'?(v?'🚫 Bloklandı':'✅ Blok açıldı'):a==='premium'?(v?'👑 Premium açıldı — hər iki saytda':'Premium götürüldü'):(v?'💳 Ödəniş edənlərə əlavə olundu':'Ödəniş işarəsi götürüldü'));
   }catch(e){u[F]=old;if(oldX)TU.px.add(String(tel));tUsers();const m=String(e&&e.message);
     toast(m==='key'?'Cədvəl açarı səhvdir.':'Alınmadı. Google Cədvəlin skriptini yeniləmisiniz?')}
 }
