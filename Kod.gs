@@ -1,5 +1,5 @@
 /* English 5–11 · Google Cədvəl skripti (Apps Script)
-   Bu cədvəldə yalnız istifadəçilər (qeydiyyat, son giriş, blok, əlaqə) və müəllim düzəlişləri saxlanılır.
+   Bu cədvəldə yalnız istifadəçilər (qeydiyyat, son giriş, blok, ödəniş, 👑 premium) və müəllim düzəlişləri saxlanılır.
    Nəticələr cədvələ YAZILMIR — şagird onları WhatsApp ilə müəllimə göndərir.
    1) Aşağıdakı KEY-i öz gizli açarınızla dəyişin (məs: Samir-2026-xyz).
    2) Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone (Все). */
@@ -24,7 +24,7 @@ function findRow(s, val) {
 }
 
 /* ---------- Users vərəqi (oxunaqlı başlıqlar, tarixlər, blok qutucuqları) ---------- */
-const UL = ['Telefon', 'Ad', 'Soyad', 'Rol', 'Qeydiyyat tarixi', 'Son giriş', 'Bloklanıb', 'Sayt', 'Əlaqə saxlanılıb'];
+const UL = ['Telefon', 'Ad', 'Soyad', 'Rol', 'Qeydiyyat tarixi', 'Son giriş', 'Bloklanıb', 'Sayt', 'Əlaqə saxlanılıb', 'Premium'];
 const DF = 'dd.mm.yyyy hh:mm';
 const isTrue = x => x === true || String(x).toUpperCase() === 'TRUE';
 const ms = x => x instanceof Date ? x.getTime() : (+x || '');
@@ -42,7 +42,8 @@ function colMap(hv) {
     k => k === 'son' || k.startsWith('son giri') || k === 'last',
     k => k === 'blok' || k.startsWith('blok') || k === 'block',
     k => k === 'sayt' || k === 'site',
-    k => k === 'elaqe' || k.startsWith('əlaqə') || k.startsWith('elaqe')];
+    k => k === 'elaqe' || k.startsWith('əlaqə') || k.startsWith('elaqe'),
+    k => k === 'prem' || k.startsWith('premium')];
   return T.map(f => h.findIndex(f));
 }
 /* başqa vərəqlərdə qalmış köhnə istifadəçiləri Users-ə köçürür (təkrarlamadan) */
@@ -59,7 +60,7 @@ function usersImport(s) {
       const tel = String(r[idx[0]] || '').replace(/\D/g, '').replace(/^994/, '').replace(/^0/, '');
       if (!tel || have.has(tel)) return;
       have.add(tel);
-      add.push(idx.map((i, j) => j === 0 ? "'" + tel : i < 0 ? (j === 6 ? false : '') : r[i]));
+      add.push(idx.map((i, j) => j === 0 ? "'" + tel : i < 0 ? (j === 6 || j === 9 ? false : '') : r[i]));
     });
   });
   if (add.length) s.getRange(s.getLastRow() + 1, 1, add.length, UL.length).setValues(add);
@@ -78,7 +79,7 @@ function usersSheet() {
     if (n > 0 && idx[0] < 0) return s; /* tanınmayan format: heç nəyə toxunma */
     if (n > 0 && idx.some((i, j) => i !== j)) {
       const all = s.getRange(2, 1, n, w).getValues();
-      const nv = all.map(r => idx.map(i => i < 0 ? '' : r[i]));
+      const nv = all.map(r => idx.map((i, j) => i < 0 ? (j === 9 ? false : '') : r[i]));
       s.getRange(2, 1, n, Math.max(w, UL.length)).clearContent();
       s.getRange(2, 1, n, UL.length).setValues(nv);
     }
@@ -93,17 +94,18 @@ function usersFix(s) {
   if (n < 1) return;
   const rg = s.getRange(2, 1, n, UL.length), v = rg.getValues();
   let ch = false;
-  v.forEach(r => { [4, 5, 8].forEach(j => { const d = asDate(r[j]); if (d !== r[j]) { r[j] = d; ch = true; } }); const b = isTrue(r[6]); if (r[6] !== b) { r[6] = b; ch = true; } });
+  v.forEach(r => { [4, 5, 8].forEach(j => { const d = asDate(r[j]); if (d !== r[j]) { r[j] = d; ch = true; } }); const b = isTrue(r[6]); if (r[6] !== b) { r[6] = b; ch = true; } const p = isTrue(r[9]); if (r[9] !== p) { r[9] = p; ch = true; } });
   if (ch) rg.setValues(v);
   s.getRange(2, 5, n, 2).setNumberFormat(DF);
   s.getRange(2, 9, n, 1).setNumberFormat(DF);
   s.getRange(2, 7, n, 1).insertCheckboxes();
+  s.getRange(2, 10, n, 1).insertCheckboxes();
 }
 function usersRows(s) {
   usersImport(s);
   usersFix(s);
   const v = s.getDataRange().getValues(); v.shift();
-  return v.filter(r => r[0] !== '').map(r => ({ tel: String(r[0]), ad: r[1], soyad: r[2], rol: r[3], qeyd: ms(r[4]), son: ms(r[5]), blok: isTrue(r[6]), sayt: r[7], elaqe: ms(r[8]) }));
+  return v.filter(r => r[0] !== '').map(r => ({ tel: String(r[0]), ad: r[1], soyad: r[2], rol: r[3], qeyd: ms(r[4]), son: ms(r[5]), blok: isTrue(r[6]), sayt: r[7], elaqe: ms(r[8]), prem: isTrue(r[9]) }));
 }
 function userRow(s, tel) {
   const n = s.getLastRow();
@@ -116,22 +118,24 @@ function userPing(o, now) {
   const s = usersSheet();
   const r = userRow(s, o.tel);
   if (!r) {
-    s.appendRow(["'" + (o.tel || ''), o.ad || '', o.soyad || '', o.rol || '', new Date(+o.qeyd || now), new Date(now), false, o.sayt || '', '']);
+    s.appendRow(["'" + (o.tel || ''), o.ad || '', o.soyad || '', o.rol || '', new Date(+o.qeyd || now), new Date(now), false, o.sayt || '', '', false]);
     const lr = s.getLastRow();
     s.getRange(lr, 5, 1, 2).setNumberFormat(DF);
     s.getRange(lr, 7).insertCheckboxes();
-    return { ok: true, blok: false };
+    s.getRange(lr, 10).insertCheckboxes();
+    return { ok: true, blok: false, prem: false };
   }
-  const val = s.getRange(r, 1, 1, 7).getValues()[0];
+  const val = s.getRange(r, 1, 1, 10).getValues()[0];
   s.getRange(r, 2, 1, 3).setValues([[o.ad || val[1], o.soyad || val[2], o.rol || val[3]]]);
   s.getRange(r, 6).setValue(new Date(now)).setNumberFormat(DF);
-  return { ok: true, blok: isTrue(val[6]) };
+  return { ok: true, blok: isTrue(val[6]), prem: isTrue(val[9]) };
 }
 function userSet(o, now) {
   const s = usersSheet();
   const r = userRow(s, o.tel);
   if (!r) return { ok: false, error: 'tel' };
   if (o.a === 'block') { s.getRange(r, 7).insertCheckboxes().setValue(!!o.v); return { ok: true }; }
+  if (o.a === 'premium') { s.getRange(r, 10).insertCheckboxes().setValue(!!o.v); return { ok: true }; }
   s.getRange(r, 9).setValue(o.v ? new Date(now) : '').setNumberFormat(DF);
   return { ok: true, t: o.v ? now : '' };
 }
@@ -162,16 +166,17 @@ function cfgSet(g, state) {
   s.getRange(r, 3, 1, parts.length).setNumberFormat('@').setValues([parts]);
 }
 
-/* Oxu: ?a=cfg (hamı üçün) · ?a=users&key=… (müəllim) */
+/* Oxu: ?a=cfg (hamı üçün) · ?a=users&key=… · ?a=plist&key=… (müəllim) */
 function doGet(e) {
   const p = e.parameter || {};
   if (p.a === 'cfg') return out({ state: cfgAll() });
   if (p.key !== KEY) return out({ error: 'key' });
   if (p.a === 'users') return out({ rows: usersRows(usersSheet()) });
+  if (p.a === 'plist') return out({ tels: usersRows(usersSheet()).filter(u => u.prem).map(u => u.tel) });
   return out({ error: 'a' });
 }
 
-/* Yaz: ping (qeydiyyat + son giriş + blok yoxlaması), block, elaqe, cfg (müəllim) */
+/* Yaz: ping (qeydiyyat + son giriş + blok yoxlaması), pq (premium yoxlaması), block, elaqe (ödəniş), premium, cfg (müəllim) */
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -179,8 +184,12 @@ function doPost(e) {
     const o = JSON.parse(e.postData.contents || '{}');
     const now = Date.now();
     if (o.a === 'ping') return out(userPing(o, now));
+    if (o.a === 'pq') { /* şagirdin premium yoxlaması (Missions) */
+      const s = usersSheet(), r = userRow(s, o.tel);
+      return out({ ok: true, prem: r ? isTrue(s.getRange(r, 10).getValue()) : false });
+    }
     if (o.key !== KEY) return out({ ok: false, error: 'key' });
-    if (o.a === 'block' || o.a === 'elaqe') return out(userSet(o, now));
+    if (o.a === 'block' || o.a === 'elaqe' || o.a === 'premium') return out(userSet(o, now));
     if (o.a === 'cfg') {
       if (!o.g) return out({ ok: false, error: 'g' });
       cfgSet(String(o.g), o.state);
