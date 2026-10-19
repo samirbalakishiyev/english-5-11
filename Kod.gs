@@ -26,7 +26,7 @@ function findRow(s, val) {
 /* ---------- Users vərəqi (oxunaqlı başlıqlar, tarixlər, blok qutucuqları) ---------- */
 const UL = ['Telefon', 'Ad', 'Soyad', 'Rol', 'Qeydiyyat tarixi', 'Son giriş', 'Bloklanıb', 'Sayt', 'Əlaqə saxlanılıb', 'Premium'];
 const DF = 'dd.mm.yyyy hh:mm';
-const isTrue = x => x === true || String(x).toUpperCase() === 'TRUE';
+const isTrue = x => x === true || /^(true|bəli|beli|yes|1|blok)$/i.test(String(x).trim());
 const ms = x => x instanceof Date ? x.getTime() : (+x || '');
 const asDate = x => (typeof x === 'number' && x > 1e11) ? new Date(x) : x;
 
