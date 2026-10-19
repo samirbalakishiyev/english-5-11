@@ -633,23 +633,23 @@ const isPaid=u=>(+u.elaqe||0)>=PAY_FROM, isPay=u=>isPaid(u)&&!u.blok, isNew=u=>!
 async function tUsers(reload){
   const same=!X.hidden&&!!$('tuList'),y=window.scrollY;
   if(!TU.list||reload){if(!same){screen(thdr('İstifadəçilər','Yüklənir…',tHome));bindT(tHome)}else toast('Yenilənir…');await Promise.all([tFetch(),tPremX()])}
-  const L=TU.list||[],now=Date.now(),day=864e5,q=TU.q.toLowerCase();
+  const L=TU.list||[];const RL=L.filter(u=>!TU.r||u.rol===TU.r),cR=r=>L.filter(u=>u.rol===r).length;const now=Date.now(),day=864e5,q=TU.q.toLowerCase();
   const bl=L.filter(u=>u.blok).length,tl=L.filter(u=>u.rol==='Tələbə').length,mu=L.filter(u=>u.rol==='Müəllim').length;
   const td=L.filter(u=>now-(+u.son||0)<day).length,wk=L.filter(u=>now-(+u.son||0)<7*day).length;
   let h=thdr('İstifadəçilər',L.length+' nəfər',tHome);
   if(TU.err)h+=`<p class="perr">${esc(TU.err)}</p>`;
   h+=`<div class="statrow">${[['Cəmi',L.length],['Tələbə',tl],['Müəllim',mu],['Bu gün',td],['Bu həftə',wk],['Bloklanıb',bl],['🆕 Yeni',L.filter(isNew).length],['💳 Ödəniş edib',L.filter(isPay).length],['👑 Premium',L.filter(isPrem).length]].map(([a,b])=>`<div><small>${a}</small><b>${b}</b></div>`).join('')}</div>`;
-  h+=`<div class="hrow" style="align-items:center;margin-bottom:8px"><button class="hbtn" data-act="reload">↻ Yenilə</button><b>Rol:</b>${[['','Hamısı'],['Tələbə','🎓 Tələbə'],['Müəllim','👩‍🏫 Müəllim']].map(([f,l])=>`<button class="hbtn ${TU.r===f?'':'gh'}" data-r="${f}">${l}</button>`).join('')}</div>`;
-  h+=`<div class="hrow" style="align-items:center"><b>Status:</b>${[['Yeni','🆕 Yeni qoşulanlar ('+L.filter(isNew).length+')'],['Pay','💳 Ödəniş edənlər ('+L.filter(isPay).length+')'],['Blok','🚫 Bloklananlar ('+bl+')'],['','Hamısı'],['Prem','👑 Premium']].map(([f,l])=>`<button class="hbtn ${TU.f===f?'':'gh'}" data-f="${f}">${l}</button>`).join('')}</div>`;
+  h+=`<div class="hrow" style="align-items:center;margin-bottom:8px"><button class="hbtn" data-act="reload">↻ Yenilə</button><b>Göstər:</b>${[['','👥 Hamısı ('+L.length+')'],['Müəllim','👩‍🏫 Müəllimlər ('+cR('Müəllim')+')'],['Tələbə','🎓 Tələbələr ('+cR('Tələbə')+')']].map(([f,l])=>`<button class="hbtn ${TU.r===f?'':'gh'}" data-r="${f}">${l}</button>`).join('')}</div>`;
+  if(TU.r)h+=`<div class="hrow" style="align-items:center"><b>${TU.r==='Müəllim'?'Müəllimlər':'Tələbələr'}:</b>${[['Yeni','🆕 Yeni qoşulanlar ('+RL.filter(isNew).length+')'],['Pay','💳 Ödəniş edənlər ('+RL.filter(isPay).length+')'],['Blok','🚫 Bloklananlar ('+RL.filter(u=>u.blok).length+')'],['Prem','👑 Premium ('+RL.filter(isPrem).length+')']].map(([f,l])=>`<button class="hbtn ${TU.f===f?'':'gh'}" data-f="${f}">${l}</button>`).join('')}</div>`;
   h+=`<input class="tsearch" id="tsq" placeholder="Axtar: ad, soyad, telefon…" value="${esc(TU.q)}">`;
-  const okF=u=>!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Yeni'?isNew(u):TU.f==='Pay'?isPay(u):TU.f==='Prem'?isPrem(u):true);
+  const okF=u=>!TU.r||!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Yeni'?isNew(u):TU.f==='Pay'?isPay(u):TU.f==='Prem'?isPrem(u):true);
   const rows=L.filter(u=>(!TU.r||u.rol===TU.r)&&okF(u)&&(!q||[u.ad,u.soyad,u.tel].join(' ').toLowerCase().includes(q))).sort((a,b)=>(+b.son||0)-(+a.son||0));
   h+=`<p class="hnote" style="margin:0 0 8px">Göstərilir: ${rows.length}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel),pr=isPrem(u);return `<div class="titem${u.blok?' blk':''}"><span><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${pr?' <em class="tag gold">👑 Premium</em>':''}${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${isPaid(u)?` <em class="tag grn">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}<br><small>+994 ${t}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener" data-wa="${t}">💬</a><button class="tbtn${isPaid(u)?'':' ok'}" data-set="elaqe" data-tel="${t}" data-v="${!isPaid(u)}">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${pr?'gold':'goldo'}" data-set="premium" data-tel="${t}" data-v="${!pr}">${pr?'👑 Premiumu götür':'👑 Premium et'}</button><button class="tbtn ${u.blok?'ok':'rm'}" data-set="block" data-tel="${t}" data-v="${!u.blok}">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="hnote">Bu filtrdə heç kim yoxdur.</p>')+`</div>`;
   if(same){X.innerHTML=h}else screen(h);
   bindT(tHome);
   X.querySelector('[data-act="reload"]').onclick=()=>tUsers(true);
   X.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{TU.f=b.dataset.f;tUsers()});
-  X.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{TU.r=b.dataset.r;tUsers()});
+  X.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{TU.r=b.dataset.r;TU.f='Yeni';tUsers()});
   X.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>tSet(b.dataset.set,b.dataset.tel,b.dataset.v==='true'));
   X.querySelectorAll('[data-wa]').forEach(b=>b.onclick=()=>tWa(b.dataset.wa));
   const s=$('tsq');s.oninput=()=>{TU.q=s.value;clearTimeout(window._tq);window._tq=setTimeout(()=>{tUsers();const i=$('tsq');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)};
