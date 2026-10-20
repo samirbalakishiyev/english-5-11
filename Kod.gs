@@ -166,12 +166,27 @@ function cfgSet(g, state) {
   s.getRange(r, 3, 1, parts.length).setNumberFormat('@').setValues([parts]);
 }
 
+/* ✍️ Rəy və təkliflər: "Rəylər" vərəqi */
+const FL = ['Tarix', 'Telefon', 'Ad', 'Soyad', 'Rol', 'Rəy'];
+function fbSheet() {
+  const ss = SpreadsheetApp.getActive();
+  let s = ss.getSheetByName('Rəylər');
+  if (!s) { s = ss.insertSheet('Rəylər'); s.appendRow(FL); s.getRange(1, 1, 1, FL.length).setFontWeight('bold'); s.setFrozenRows(1); s.setColumnWidth(6, 420); }
+  return s;
+}
+function fbRows() {
+  const s = fbSheet();
+  if (s.getLastRow() < 2) return [];
+  return s.getRange(2, 1, s.getLastRow() - 1, FL.length).getValues().map(r => ({ at: ms(r[0]), tel: String(r[1]).replace(/^'/, ''), ad: r[2], soyad: r[3], rol: r[4], x: String(r[5]) }));
+}
+
 /* Oxu: ?a=cfg (hamı üçün) · ?a=users&key=… · ?a=plist&key=… (müəllim) */
 function doGet(e) {
   const p = e.parameter || {};
   if (p.a === 'cfg') return out({ state: cfgAll() });
   if (p.key !== KEY) return out({ error: 'key' });
   if (p.a === 'users') return out({ rows: usersRows(usersSheet()) });
+  if (p.a === 'fbs') return out({ rows: fbRows() });
   if (p.a === 'plist') return out({ tels: usersRows(usersSheet()).filter(u => u.prem).map(u => u.tel) });
   return out({ error: 'a' });
 }
@@ -184,6 +199,14 @@ function doPost(e) {
     const o = JSON.parse(e.postData.contents || '{}');
     const now = Date.now();
     if (o.a === 'ping') return out(userPing(o, now));
+    if (o.a === 'fb') { /* şagirdin rəyi (açar lazım deyil) */
+      const x = String(o.x || '').trim().slice(0, 2000);
+      if (!x) return out({ ok: false, error: 'x' });
+      const s = fbSheet();
+      s.appendRow([new Date(+o.at || now), "'" + String(o.tel || ''), o.ad || '', o.soyad || '', o.rol || '', x]);
+      s.getRange(s.getLastRow(), 1).setNumberFormat(DF);
+      return out({ ok: true });
+    }
     if (o.a === 'pq') { /* şagirdin premium yoxlaması (Missions) */
       const s = usersSheet(), r = userRow(s, o.tel);
       return out({ ok: true, prem: r ? isTrue(s.getRange(r, 10).getValue()) : false });
