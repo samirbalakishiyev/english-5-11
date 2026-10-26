@@ -316,7 +316,8 @@ const EL = {
   q(){ const a = EL.get('gram-sendq', []); return Array.isArray(a) ? a : []; },
   pr(){ const p = EL.get('e511-prof', null); return p && p.n && p.k && String(p.t || '').replace(/\D/g, '').length === 9 ? p : null; }
 };
-function elLog(r){ const a = EL.q(); if (a.some(e => e.d === r.ts)) return; a.push({ t: r.title, r: r.score, n: r.total, p: Math.round(r.score / r.total * 100), w: [], d: r.ts }); while (a.length > 40) a.shift(); EL.set('gram-sendq', a); }
+function elLog(r){ const a = EL.q(); if (a.some(e => e.d === r.ts)) return; a.push({ t: r.title, r: r.score, n: r.total, p: Math.round(r.score / r.total * 100), w: [], d: r.ts }); while (a.length > 40) a.shift(); EL.set('gram-sendq', a);
+  const L = EL.get('e511-log', []); const A = Array.isArray(L) ? L : []; A.push({ pfx: 'gram', t: r.title, r: r.score, n: r.total, p: Math.round(r.score / r.total * 100), d: r.ts, w: [] }); while (A.length > 300) A.shift(); EL.set('e511-log', A); }
 function elSendBox(r){
   const el = document.getElementById('res-send'); if (!el) return; if (!r || r.mist){ el.innerHTML = ''; return; }
   const P = EL.pr(), list = EL.q();
