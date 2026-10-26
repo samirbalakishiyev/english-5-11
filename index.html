@@ -171,6 +171,11 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 @media (min-width:860px){.hero{min-height:260px;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}.pic img{object-position:center 45%}}
 @media (max-width:520px){.hero{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);min-height:190px}.htxt{padding:16px 8px 16px 16px}}
 #sx{cursor:default}
+.applink.me{background:#E0F4F5;color:#0E5F66;border-color:#0E7C86;margin-right:6px}
+.fbnew{margin-left:auto;background:#fff;color:#B71C1C;border-radius:999px;padding:2px 9px;font-size:12.5px;font-weight:900;white-space:nowrap}#fbopen:has(.fbnew) small{display:none}
+.fbrep{flex-basis:100%;margin-top:4px;padding:10px 12px;border-radius:12px;background:#E3F5EA;border:1.5px solid #1E8E4E;color:#0F4D2A}.fbrep.nw{box-shadow:0 0 0 3px #1E8E4E44}.fbrep b{display:block;font-size:14px}.fbrep small{display:block;color:#3C7A55;font-weight:700;font-size:12px}.fbrep p{margin:4px 0 0;white-space:pre-wrap;font-weight:700}
+.tfbr,.tren{flex-basis:100%;display:grid;gap:6px;margin-top:4px}.tfbr textarea,.tren input{width:100%;font:inherit;font-size:15px;font-weight:600;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);resize:vertical}.tren label{display:grid;gap:2px;font-size:13px;font-weight:800;color:var(--soft)}.tren{padding:10px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg)}
+.tag.red{background:#D9364C;color:#fff;border-color:#D9364C}.tag.grn{background:#1E8E4E;color:#fff;border-color:#1E8E4E}
 .rtile{background:linear-gradient(135deg,#E3F2E5,#C9E8CF)!important;border-color:#4A9F5A!important;color:#1F5A2B!important;box-shadow:0 10px 24px -16px #4A9F5A!important}.rtile small{color:#2E6B3A!important}
 .rstat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 12px}.rstat>div{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:10px;text-align:center}.rstat b{display:block;font-size:22px;font-weight:900;color:#4A9F5A}.rstat span{font-size:12px;font-weight:700;color:var(--soft)}.rstat .u b{color:#D32F2F}
 .rch{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 6px}.rch .hbtn{padding:6px 12px;font-size:14px}
@@ -541,6 +546,7 @@ function regSubmit(){
   if(!ad)err='Adınızı yazın.';else if(!soyad)err='Soyadınızı yazın.';
   else if(!RG.rol)err='Şagird və ya Müəllim düyməsini seçin.';
   else if(!telOK(tel))err='Telefon nömrəsi düzgün deyil. Nümunə: 55 123 45 67';
+  else if(tel===SAMIR_TEL&&!lsGet('e511-tkey',''))err='Bu, Samir müəllimin nömrəsidir. Öz telefon nömrənizi yazın.';
   if(err){RG.err=err;regScreen();return}
   REG={ad,soyad,tel,rol:RG.rol,at:Date.now()};lsSet('e511-reg',REG);
   if(!PR.n){PR.n=ad+' '+soyad;lsSet('e511-prof',PR)}
@@ -614,12 +620,13 @@ function dnBind(){const g=id=>document.getElementById(id),T=g('dn_t'),X2=g('dn_x
 /* 🔎 istifadəçi axtarışı: ad/soyad və ya nömrənin istənilən hissəsi (boşluq, 0, +994 fərq etmir) */
 const telD=x=>String(x||'').replace(/\D/g,'');
 const qTel=q=>{let d=telD(q);if(d.length>9&&d.startsWith('994'))d=d.slice(3);if(d.length===10&&d[0]==='0')d=d.slice(1);return d};
-const lc=s=>String(s||'').toLocaleLowerCase('az');
+/* axtarış hərfə həssas deyil: Ə=E=A, I=İ=ı, Ş=S, Ç=C, Ğ=G, Ö=O, Ü=U */
+const lc=s=>String(s||'').toLocaleLowerCase('az').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ə/g,'e').replace(/ı/g,'i').replace(/ş/g,'s').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ö/g,'o').replace(/ü/g,'u').replace(/a/g,'e');
 function telSpan(t,q){const d=telD(q);if(!d)return [-1,-1];const a=qTel(q);let i=t.indexOf(a);if(a&&i>=0)return [i,i+a.length];
   i=('0'+t).indexOf(d);if(i>=0)return [Math.max(0,i-1),i-1+d.length];i=('994'+t).indexOf(d);if(i>=0)return [Math.max(0,i-3),i-3+d.length];return [-1,-1]}
 function uHit(u,q){q=lc(q).trim();if(!q)return true;const t=telD(u.tel);
-  if(telD(q)&&telSpan(t,q)[0]<0)return false;
-  const words=q.replace(/[\d+()\-.]/g,' ').split(/\s+/).filter(Boolean),nm=lc([u.ad,u.soyad,u.rol,u.sayt].join(' '));
+  if(telD(q)&&telSpan(t,q)[0]<0&&!(u.tel2&&telSpan(telD(u.tel2),q)[0]>=0))return false;
+  const words=q.replace(/[\d+()\-.]/g,' ').split(/\s+/).filter(Boolean),nm=lc([u.ad,u.soyad,u.rol,u.sayt,u.nm].join(' '));
   return words.every(w=>nm.includes(w))}
 function telHL(tel,q){const t=telD(tel),[s,e]=telSpan(t,q||''),G=t.length===9?[2,5,7]:[];let h='',on=false;
   [...t].forEach((c,j)=>{const m=j>=s&&j<e;if(G.includes(j)){if(on){h+='</mark>';on=false}h+=' '}if(m&&!on){h+='<mark class="thl">';on=true}if(!m&&on){h+='</mark>';on=false}h+=c});
@@ -754,18 +761,41 @@ function tHome(){
 }
 /* ---------- ✍️ Rəy və təkliflər: şagird yalnız öz rəylərini görür, müəllim hamısını ---------- */
 let FB=lsGet('e511-fb',[]);if(!Array.isArray(FB))FB=[];let FBMSG='';
-function fbHome(){
-  const mine=FB.slice().reverse();
+/* serverdəki rəylərim + müəllimin cavabları (e511-fbs); oxunmuş cavablar e511-fbseen-də */
+let FBS=lsGet('e511-fbs',null);
+const fbUnread=()=>{const seen=lsGet('e511-fbseen',{});return (FBS||[]).filter(f=>f.rep&&(+f.rat||1)>(+seen[f.id]||0)).length};
+let FBOPEN=false;
+async function fbSync(){
+  if(!SHEET_URL||!REG||!REG.tel)return;
+  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'fbmine',tel:REG.tel})});const o=await r.json();
+    if(o&&o.ok&&Array.isArray(o.rows)){FBS=o.rows;lsSet('e511-fbs',FBS);if(FBOPEN&&!X.hidden)fbHome(true);fbBadge()}}catch(e){}
+}
+function fbBadge(){const b=$('fbopen'),n=fbUnread();if(!b)return;let x=b.querySelector('.fbnew');if(n){if(!x){x=document.createElement('b');x.className='fbnew';b.appendChild(x)}x.textContent='💬 '+n+' yeni cavab'}else if(x)x.remove()}
+function fbHome(keep){
+  FBOPEN=true;
+  const srv=(FBS||[]).map(f=>({...f,srv:1})),hidL=new Set(lsGet('e511-fbhid',[]));
+  const loc=FB.filter(f=>!hidL.has(f.at)&&!srv.some(g=>Math.abs((+g.at||0)-f.at)<3000&&g.x===f.x)).map(f=>({id:'L'+f.at,at:f.at,x:f.x,pend:FBS!=null}));
+  const mine=srv.concat(loc).sort((a,b)=>(+b.at||0)-(+a.at||0)),seen=lsGet('e511-fbseen',{});
   screen(`<div class="thd"><button class="hbtn gh" id="thome">⌂ Əsas səhifə</button></div><section class="prof"><h3>✍️ Rəy və təklifləriniz</h3><p class="hnote">Fikriniz bizim üçün çox vacibdir!<br>🔒 Rəyinizi yalnız Samir müəllim oxuyur.</p><textarea id="fbx" rows="5" maxlength="2000" placeholder="Məs: 9-cu sinfə daha çox test əlavə olunsun…" style="width:100%;font:inherit;font-size:16px;font-weight:700;padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);resize:vertical"></textarea>${FBMSG?`<p class="hnote" style="color:#1E8E4E;font-weight:900">${esc(FBMSG)}</p>`:''}<button class="hbtn" id="fbgo" type="button">Göndər</button></section>
-  <h3 style="margin:18px 0 8px;font-size:17px;font-weight:900">Mənim rəylərim (${mine.length})</h3>`+(mine.length?`<div class="tlist">${mine.map(f=>`<div class="titem"><span style="white-space:pre-wrap"><small style="font-weight:800;color:var(--soft)">${dOnly(f.at)}</small><br>${esc(f.x)}</span></div>`).join('')}</div>`:`<p class="hnote">Hələ rəy yazmamısınız.</p>`));
-  bindT();$('fbgo').onclick=fbSend;FBMSG='';
+  <h3 style="margin:18px 0 8px;font-size:17px;font-weight:900">Mənim rəylərim (${mine.length})</h3>`+(mine.length?`<div class="tlist">${mine.map(f=>{const nw=f.rep&&(+f.rat||1)>(+seen[f.id]||0);return `<div class="titem"><span style="white-space:pre-wrap"><small style="font-weight:800;color:var(--soft)">${dOnly(f.at)}${f.pend?' · ⏳ göndərilir':''}</small><br>${esc(f.x)}</span><button class="tbtn rm" type="button" data-fh="${esc(f.id)}" aria-label="Sil">🗑</button>${f.rep?`<div class="fbrep${nw?' nw':''}"><b>💬 Samir müəllimin cavabı${nw?' · yeni':''}</b><small>${dOnly(f.rat)}</small><p>${esc(f.rep)}</p></div>`:''}</div>`}).join('')}</div><p class="hnote">🗑 ilə sildiyiniz rəy yalnız sizin siyahınızdan çıxır.</p>`:`<p class="hnote">Hələ rəy yazmamısınız. Müəllimin cavabı da burada görünəcək.</p>`));
+  bindT();$('thome').onclick=()=>{FBOPEN=false;showHome()};$('fbgo').onclick=fbSend;FBMSG='';
+  X.querySelectorAll('[data-fh]').forEach(b=>b.onclick=()=>fbHide(b.dataset.fh));
+  {const m={...seen};(FBS||[]).forEach(f=>{if(f.rep)m[f.id]=+f.rat||1});lsSet('e511-fbseen',m)}
+  if(!keep)fbSync();
+}
+async function fbHide(id){
+  if(id[0]==='L'){const at=+id.slice(1),hl=lsGet('e511-fbhid',[]);hl.push(at);lsSet('e511-fbhid',hl.slice(-200));FB=FB.filter(f=>f.at!==at);lsSet('e511-fb',FB);return fbHome(true)}
+  const f=(FBS||[]).find(x=>x.id===id);FBS=(FBS||[]).filter(x=>x.id!==id);lsSet('e511-fbs',FBS);
+  if(f){const hl=lsGet('e511-fbhid',[]);FB.forEach(g=>{if(Math.abs(g.at-(+f.at||0))<3000&&g.x===f.x)hl.push(g.at)});lsSet('e511-fbhid',hl.slice(-200))}
+  fbHome(true);
+  try{await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'fbhide',tel:REG&&REG.tel,id})})}catch(e){}
 }
 function fbSend(){
   const e=$('fbx'),x=(e.value||'').trim();
   if(!x){e.focus();e.placeholder='Əvvəlcə rəyinizi yazın…';return}
   const at=Date.now();FB.push({x,at});lsSet('e511-fb',FB.slice(-100));
-  qPush({a:'fb',...regFields(),x,at});qFlush();
-  FBMSG='✅ Təşəkkür edirik! Rəyiniz göndərildi.';fbHome();
+  qPush({a:'fb',...regFields(),x,at});qFlush().then(()=>fbSync());
+  FBMSG='✅ Təşəkkür edirik! Rəyiniz göndərildi.';fbHome(true);
 }
 {const b=$('fbopen');if(b)b.onclick=fbHome;}
 /* ---------- 📊 Nəticələrim: bütün siniflərin nəticələri; göndərilməyənə toxunanda müəllimə gedir, göndərilən bir daha getmir ---------- */
@@ -806,17 +836,39 @@ function resHome(){
   X.querySelectorAll('.rsend').forEach(a=>a.onclick=()=>{markSentE([list[+a.dataset.ri]]);setTimeout(resHome,500)});
 }
 {const b=$('resopen');if(b)b.onclick=resHome;}
-let TFB={rows:null,err:''};
+let TFB={rows:null,err:'',f:'',del:''};
 async function tFb(reload){
   if(!TFB.rows||reload){screen(thdr('Rəy və təkliflər','Yüklənir…',tHome));bindT(tHome);TFB.err='';
     const key=lsGet('e511-tkey','');
-    if(!key)TFB.err='Əvvəlcə "Cədvəl açarı"nı daxil edin.';
+    if(!key)TFB.err='Əvvəlcə daxil olun.';
     else try{const r=await fetch(SHEET_URL+'?a=fbs&key='+encodeURIComponent(key)+'&_='+Date.now());const o=await r.json();
       if(o.error)TFB.err=o.error==='key'?'Cədvəl açarı səhvdir.':o.error==='a'?'Google Cədvəlin skriptini yeniləyin (yeni Kod.gs).':'Xəta: '+o.error;else TFB.rows=o.rows||[]}
     catch(e){TFB.err='Yükləmək alınmadı. İnterneti yoxlayın.'}}
-  const L=(TFB.rows||[]).slice().sort((a,b)=>(+b.at||0)-(+a.at||0));
-  screen(thdr('Rəy və təkliflər',L.length+' rəy',tHome)+(TFB.err?`<p class="perr">${esc(TFB.err)}</p>`:'')+`<div class="hrow" style="margin-bottom:10px"><button class="hbtn" id="tfre">↻ Yenilə</button></div><div class="tlist">`+L.map(f=>{const t=esc(f.tel);return `<div class="titem"><span style="flex:1 1 220px;min-width:0"><b>${esc(f.ad)} ${esc(f.soyad)}</b> <em class="tag">${esc(f.rol||'')}</em><br><small>+994 ${t} · ${dOnly(f.at)}</small><div style="white-space:pre-wrap;margin-top:6px;font-weight:700">${esc(f.x)}</div></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener">💬</a></div>`}).join('')+(L.length?'':'<p class="hnote">Hələ rəy yoxdur.</p>')+`</div>`);
-  bindT(tHome);$('tfre').onclick=()=>tFb(true);
+  const A=(TFB.rows||[]).slice().sort((a,b)=>(+b.at||0)-(+a.at||0)),F=TFB.f||'',st=f=>f.st||'Yeni';
+  const L=A.filter(f=>F==='Arxiv'?st(f)==='Arxiv':F?st(f)===F:st(f)!=='Arxiv');
+  const cnt=k=>A.filter(f=>k==='Arxiv'?st(f)==='Arxiv':k?st(f)===k:st(f)!=='Arxiv').length;
+  const y=window.scrollY,same=!X.hidden&&!!$('tfbList');
+  const SC={Yeni:'red',Oxundu:'',Cavablandı:'grn',Arxiv:''};
+  let h=thdr('Rəy və təkliflər',A.length+' rəy',tHome)+(TFB.err?`<p class="perr">${esc(TFB.err)}</p>`:'');
+  h+=`<div class="hrow" style="margin-bottom:10px;align-items:center"><button class="hbtn" id="tfre">↻ Yenilə</button>${[['','📥 Hamısı'],['Yeni','🆕 Yeni'],['Oxundu','👁 Oxundu'],['Cavablandı','💬 Cavablandı'],['Arxiv','🗄 Arxiv']].map(([k,l])=>`<button class="hbtn ${F===k?'':'gh'}" data-ff="${k}">${l} (${cnt(k)})</button>`).join('')}</div><div class="tlist" id="tfbList">`;
+  h+=L.map((f,i)=>{const t=esc(f.tel),s0=st(f);return `<div class="titem"${s0==='Yeni'?' style="border-color:#D9364C"':''}><span style="flex:1 1 220px;min-width:0"><b>${esc(f.ad)} ${esc(f.soyad)}</b> <em class="tag">${esc(f.rol||'')}</em> <em class="tag ${SC[s0]||''}">${s0}</em>${f.hid?' <em class="tag">şagird öz tərəfində silib</em>':''}<br><small>+994 ${t} · ${dOnly(f.at)}</small><div style="white-space:pre-wrap;margin-top:6px;font-weight:700">${esc(f.x)}</div></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener">💬</a>
+  <div class="tfbr"><textarea data-rep="${i}" rows="2" maxlength="2000" placeholder="Cavabınızı yazın — şagird öz rəyinin altında görəcək…">${esc(f.rep||'')}</textarea>${f.rep?`<small style="color:#1E8E4E;font-weight:800">✓ Cavab göndərilib · ${dOnly(f.rat)}</small>`:''}<div class="hrow"><button class="tbtn ok" data-fa="rep" data-i="${i}">💬 ${f.rep?'Cavabı yenilə':'Cavab ver'}</button>${s0==='Yeni'?`<button class="tbtn" data-fa="read" data-i="${i}">👁 Oxundu</button>`:''}${s0==='Arxiv'?`<button class="tbtn" data-fa="unarc" data-i="${i}">↩ Arxivdən çıxar</button>`:`<button class="tbtn" data-fa="arc" data-i="${i}">🗄 Arxivə</button>`}${TFB.del===f.id?`<button class="tbtn rm" data-fa="del" data-i="${i}">Bəli, birdəfəlik sil</button><button class="tbtn" data-fa="nodel" data-i="${i}">Ləğv et</button>`:`<button class="tbtn" style="color:#D9364C" data-fa="ask" data-i="${i}">🗑 Sil</button>`}</div></div></div>`}).join('')+(L.length?'':'<p class="hnote">Bu filtrdə rəy yoxdur.</p>')+`</div>`;
+  screen(h);bindT(tHome);$('tfre').onclick=()=>tFb(true);
+  X.querySelectorAll('[data-ff]').forEach(b=>b.onclick=()=>{TFB.f=b.dataset.ff;tFb()});
+  X.querySelectorAll('[data-fa]').forEach(b=>b.onclick=()=>{const f=L[+b.dataset.i],a=b.dataset.fa;if(!f)return;
+    if(a==='ask'){TFB.del=f.id;return tFb()}if(a==='nodel'){TFB.del='';return tFb()}
+    if(a==='rep'){const t=X.querySelector(`[data-rep="${b.dataset.i}"]`);return tFbSet(f.id,{rep:(t&&t.value||'').trim()})}
+    if(a==='read')return tFbSet(f.id,{st:'Oxundu'});if(a==='arc')return tFbSet(f.id,{st:'Arxiv'});if(a==='unarc')return tFbSet(f.id,{st:f.rep?'Cavablandı':'Oxundu'});if(a==='del')return tFbSet(f.id,{del:1})});
+  if(same)window.scrollTo(0,y);
+}
+async function tFbSet(id,body){
+  const key=lsGet('e511-tkey','');if(!key){toast('Əvvəlcə daxil olun.');return}
+  const L=TFB.rows||[],f=L.find(x=>x.id===id);if(!f)return;const old={...f};TFB.del='';
+  if(body.del)TFB.rows=L.filter(x=>x.id!==id);else if('rep' in body){f.rep=body.rep;f.st=body.rep?'Cavablandı':'Oxundu';f.rat=body.rep?Date.now():''}else f.st=body.st;
+  tFb();
+  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'fbset',key,id,...body})});const o=await r.json();if(!o.ok)throw new Error(o.error||'x');
+    toast(body.del?'🗑 Silindi':'rep' in body?(body.rep?'💬 Cavab göndərildi':'Cavab silindi'):body.st==='Arxiv'?'🗄 Arxivə köçürüldü':'✓ '+body.st)}
+  catch(e){if(body.del)TFB.rows=L;else Object.assign(f,old);tFb();const m=String(e&&e.message);toast(m==='key'?'Cədvəl açarı səhvdir.':'Alınmadı. Google Cədvəlin skriptini yeniləmisiniz?')}
 }
 let TU={list:null,q:'',f:'Yeni',r:'',err:'',msg:'',px:new Set(),pxOk:false};
 const OTHER_URL='https://script.google.com/macros/s/AKfycby-l8bfI4EZElFAOMaEOvYCJgJXMUX85Y2oI73CaSkS0oPZFpKkkKOHV_pNtYdk818/exec'; /* My New Vocabulary cədvəli: premium ortaqdır */
@@ -846,7 +898,7 @@ const isPaid=u=>(+u.elaqe||0)>=PAY_FROM, isPay=u=>isPaid(u)&&!u.blok, isNew=u=>!
 async function tUsers(reload){
   const same=!X.hidden&&!!$('tuList'),y=window.scrollY;
   if(!TU.list||reload){if(!same){screen(thdr('İstifadəçilər','Yüklənir…',tHome));bindT(tHome)}else toast('Yenilənir…');await Promise.all([tFetch(),tPremX()])}
-  const L=TU.list||[];const RL=L.filter(u=>!TU.r||u.rol===TU.r),cR=r=>L.filter(u=>u.rol===r).length;const now=Date.now(),day=864e5,q=TU.q.toLowerCase();
+  const L=TU.list||[];const RL=L.filter(u=>!TU.r||u.rol===TU.r),cR=r=>L.filter(u=>u.rol===r).length;const now=Date.now(),day=864e5,q=TU.q;
   const bl=L.filter(u=>u.blok).length,tl=L.filter(u=>u.rol==='Tələbə').length,mu=L.filter(u=>u.rol==='Müəllim').length;
   const td=L.filter(u=>now-(+u.son||0)<day).length,wk=L.filter(u=>now-(+u.son||0)<7*day).length;
   let h=thdr('İstifadəçilər',L.length+' nəfər',tHome);
@@ -857,7 +909,7 @@ async function tUsers(reload){
   h+=`<input class="tsearch" id="tsq" placeholder="Axtar: ad, soyad və ya nömrənin istənilən hissəsi (məs: 795 86)…" value="${esc(TU.q)}">`;
   const okF=u=>!TU.r||!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Yeni'?isNew(u):TU.f==='Pay'?isPay(u):TU.f==='Prem'?isPrem(u):true);
   const rows=L.filter(u=>q.trim()?uHit(u,q):((!TU.r||u.rol===TU.r)&&okF(u))).sort((a,b)=>(+b.son||0)-(+a.son||0));
-  h+=`<div id="tuRes"><p class="hnote" style="margin:0 0 8px">Göstərilir: ${rows.length}${q.trim()?' · 🔎 bütün istifadəçilər arasında axtarılır':''}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel),pr=isPrem(u);return `<div class="titem${u.blok?' blk':''}"><span><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${pr?' <em class="tag gold">👑 Premium</em>':''}${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${isPaid(u)?` <em class="tag grn">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}<br><small>+994 ${telHL(u.tel,q)}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener" data-wa="${t}">💬</a><button class="tbtn${isPaid(u)?'':' ok'}" data-set="elaqe" data-tel="${t}" data-v="${!isPaid(u)}">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${pr?'gold':'goldo'}" data-set="premium" data-tel="${t}" data-v="${!pr}">${pr?'👑 Premiumu götür':'👑 Premium et'}</button><button class="tbtn ${u.blok?'ok':'rm'}" data-set="block" data-tel="${t}" data-v="${!u.blok}">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="hnote">Bu filtrdə heç kim yoxdur.</p>')+`</div></div>`;
+  h+=`<div id="tuRes"><p class="hnote" style="margin:0 0 8px">Göstərilir: ${rows.length}${q.trim()?' · 🔎 bütün istifadəçilər arasında axtarılır':''}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel),pr=isPrem(u);return `<div class="titem${u.blok?' blk':''}"><span><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.nm||(u.ad+' '+u.soyad))}</b> <em class="tag">${esc(u.rol||'')}</em>${pr?' <em class="tag gold">👑 Premium</em>':''}${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${isPaid(u)?` <em class="tag grn">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}<br><small>+994 ${u.tel2?telHL(u.tel2,q):telHL(u.tel,q)}</small>${u.nm||u.tel2?`<br><small>✏️ düzəldilib · qeydiyyatda: ${esc(u.ad)} ${esc(u.soyad)} · +994 ${esc(u.tel)}</small>`:''}<br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small>${TU.ren===u.tel?`<div class="tren"><label>Ad<input id="ra-${t}" value="${esc((u.nm||(u.ad+' '+u.soyad)).split(' ')[0])}"></label><label>Soyad<input id="rs-${t}" value="${esc((u.nm||(u.ad+' '+u.soyad)).split(' ').slice(1).join(' '))}"></label><label>Nömrə (+994-dən sonra)<input id="rt-${t}" inputmode="tel" value="${esc(u.tel2||u.tel)}"></label><div class="hrow"><button class="tbtn ok" data-ren="save" data-tel="${t}">Yadda saxla</button>${u.nm||u.tel2?`<button class="tbtn" data-ren="reset" data-tel="${t}">Qeydiyyatdakına qaytar</button>`:''}<button class="tbtn" data-ren="cancel" data-tel="${t}">Ləğv et</button></div><small>Şagirdin girişi dəyişmir — düzəliş yalnız sizin paneldə görünür.</small></div>`:''}</span><button class="tbtn" data-ren="open" data-tel="${t}" title="Düzəlt">✏️</button><a class="tbtn" href="tel:+994${esc(u.tel2||u.tel)}">📞</a><a class="tbtn ok" href="https://wa.me/994${esc(u.tel2||u.tel)}" target="_blank" rel="noopener" data-wa="${t}">💬</a><button class="tbtn${isPaid(u)?'':' ok'}" data-set="elaqe" data-tel="${t}" data-v="${!isPaid(u)}">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${pr?'gold':'goldo'}" data-set="premium" data-tel="${t}" data-v="${!pr}">${pr?'👑 Premiumu götür':'👑 Premium et'}</button><button class="tbtn ${u.blok?'ok':'rm'}" data-set="block" data-tel="${t}" data-v="${!u.blok}">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="hnote">Bu filtrdə heç kim yoxdur.</p>')+`</div></div>`;
   if(window._tqKeep&&$('tuRes')){const T=document.createElement('div');T.innerHTML=h;$('tuRes').innerHTML=T.querySelector('#tuRes').innerHTML}else if(same){X.innerHTML=h}else screen(h);window._tqKeep=0;
   bindT(tHome);
   X.querySelector('[data-act="reload"]').onclick=()=>tUsers(true);
@@ -865,10 +917,23 @@ async function tUsers(reload){
   X.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{TU.r=b.dataset.r;TU.f='Yeni';tUsers()});
   X.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>tSet(b.dataset.set,b.dataset.tel,b.dataset.v==='true'));
   X.querySelectorAll('[data-wa]').forEach(b=>b.onclick=()=>tWa(b.dataset.wa));
+  X.querySelectorAll('[data-ren]').forEach(b=>b.onclick=()=>{const a=b.dataset.ren,t=b.dataset.tel;if(a==='open'){TU.ren=TU.ren===t?'':t;return tUsers()}if(a==='cancel'){TU.ren='';return tUsers()}tRen(t,a==='reset')});
   const s=$('tsq');s.oninput=()=>{TU.q=s.value;clearTimeout(window._tq);window._tq=setTimeout(()=>{window._tqKeep=1;tUsers();const i=$('tsq');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)};
   if(same)window.scrollTo(0,y);
 }
 /* bir klik: ekranda dərhal dəyişir (sual yoxdur, səhifə sürüşmür), sonra cədvələ yazılır; alınmasa geri qaytarılır */
+async function tRen(tel,reset){
+  const key=lsGet('e511-tkey','');if(!key){toast('Əvvəlcə daxil olun.');return}
+  const u=(TU.list||[]).find(x=>String(x.tel)===String(tel));if(!u)return;
+  const val=id=>(($(id+'-'+tel)||{}).value||'').trim().replace(/\s+/g,' ');
+  let nm='',t2='';
+  if(!reset){if(!val('ra')){toast('Ad boş ola bilməz.');return}nm=(val('ra')+' '+val('rs')).trim();t2=normTel(val('rt'));
+    if(t2&&t2.length!==9){toast('Nömrə 9 rəqəm olmalıdır (məs: 55 123 45 67).');return}
+    if(nm===(u.ad+' '+u.soyad).trim())nm='';if(t2===String(u.tel))t2=''}
+  const old=[u.nm||'',u.tel2||''];u.nm=nm;u.tel2=t2;TU.ren='';tUsers();
+  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'ren',key,tel,v:nm,t2})});const o=await r.json();if(!o.ok)throw new Error(o.error||'x');toast(reset?'Qeydiyyatdakı ad və nömrə qaytarıldı':'✏️ Düzəldildi')}
+  catch(x){[u.nm,u.tel2]=old;tUsers();const m=String(x&&x.message);toast(m==='key'?'Cədvəl açarı səhvdir.':'Alınmadı. Google Cədvəlin skriptini yeniləmisiniz?')}
+}
 function tWa(tel){} /* WhatsApp düyməsi heç nəyi avtomatik dəyişmir */
 async function tSet(a,tel,v){
   const key=lsGet('e511-tkey','');
@@ -888,10 +953,33 @@ async function tSet(a,tel,v){
 /* ---------- hub ilə əlaqə ---------- */
 const origHome=window.__hubHome;
 window.__hubHome=function(){ if(origHome) origHome(); showHome(); };
+/* 📱 qeydiyyatda müəllimin nömrəsini yazan şagird öz nömrəsini yazır */
+let TFERR='';
+function telFix(){
+  screen(`<section class="regbox"><h2>📱 Öz nömrənizi yazın</h2><p class="hnote"><b>${esc((REG.ad||'')+' '+(REG.soyad||''))}</b>, qeydiyyatda <b>Samir müəllimin nömrəsini</b> yazmısınız. Müəllim sizi tanısın deyə öz telefon nömrənizi yazın. Nəticələriniz itməyəcək.</p><div class="pf"><label>Sizin telefon nömrəniz<div class="tel"><span>+994</span><input id="tf_tel" inputmode="numeric" maxlength="12" placeholder="55 123 45 67"></div></label><p class="perr">${esc(TFERR)}</p><button class="hbtn" id="tfok" type="button">Yadda saxla və davam et →</button><button class="hbtn gh" id="tfme" type="button" style="margin-top:8px">Mən Samir müəlliməm</button></div></section>`);
+  TFERR='';
+  $('tf_tel').oninput=e=>{let d=e.target.value.replace(/\D/g,'');if(d.startsWith('994'))d=d.slice(3);if(d.startsWith('0'))d=d.slice(1);d=d.slice(0,9);e.target.value=[d.slice(0,2),d.slice(2,5),d.slice(5,7),d.slice(7,9)].filter(Boolean).join(' ')};
+  $('tfok').onclick=()=>{const tel=normTel($('tf_tel').value||'');if(!telOK(tel)){TFERR='Telefon nömrəsi düzgün deyil. Nümunə: 55 123 45 67';return telFix()}if(tel===SAMIR_TEL){TFERR='Bu, Samir müəllimin nömrəsidir. Öz nömrənizi yazın.';return telFix()}
+    REG={...REG,tel,at:Date.now()};lsSet('e511-reg',REG);lsSet('e511-blok',0);lsSet('e511-fbs',null);FBS=null;showHome();boot()};
+  $('tfme').onclick=teacher;
+}
+/* 👤 şagird öz adını və soyadını düzəldir (nömrə hesabın açarıdır, dəyişmir) */
+let MEERR='';
+function meEdit(){
+  const r=REG||{};
+  screen(`<div class="thd"><button class="hbtn gh" id="thome">⌂ Əsas səhifə</button></div><section class="regbox"><h2>👤 Mənim adım</h2><p class="hnote">Adını səhv yazmısansa, burada düzəlt. Müəllim səni bu adla görəcək.</p><div class="pf"><label>Ad<input id="me_ad" value="${esc(r.ad||'')}" autocomplete="off"></label><label>Soyad<input id="me_soyad" value="${esc(r.soyad||'')}" autocomplete="off"></label><p class="hnote">📱 Nömrə: <b>${esc(fmtTel(String(r.tel||'')))}</b><br><small>Nömrə səhvdirsə, Samir müəllimə WhatsApp-da yaz — o düzəldəcək.</small></p><p class="perr">${esc(MEERR)}</p><button class="hbtn" id="meok" type="button">Yadda saxla</button></div></section>`);
+  MEERR='';bindT();
+  $('meok').onclick=()=>{const cl=id=>String(($(id)||{}).value||'').trim().replace(/\s+/g,' ');const ad=cl('me_ad'),soyad=cl('me_soyad');if(!ad||!soyad){MEERR='Ad və soyadı yaz.';return meEdit()}
+    REG={...REG,ad,soyad};lsSet('e511-reg',REG);LASTPING=0;syncPing();showHome();meChip();toast('✅ Adın yadda saxlandı')};
+}
+function meChip(){let b=$('mechip');const host=document.querySelector('.applink');if(!host)return;if(!REG||!REG.ad){if(b)b.remove();return}
+  if(!b){b=document.createElement('button');b.type='button';b.id='mechip';b.className='applink me';host.parentNode.insertBefore(b,host);b.onclick=meEdit}
+  b.textContent='👤 '+REG.ad+' '+(REG.soyad||'')+' ✏️'}
 function boot(){
   if(!REG){ if(origHome) origHome(); regScreen(); cfgPull(); return; }
+  if(String(REG.tel)===SAMIR_TEL&&!lsGet('e511-tkey','')){ if(origHome) origHome(); telFix(); cfgPull(); return; }
   if(lsGet('e511-blok',0)){ blockScreen(); syncPing(); return; }
-  renderProf(); LASTPING=Date.now(); syncPing(); cfgPull();
+  renderProf(); meChip(); fbBadge(); LASTPING=Date.now(); syncPing(); cfgPull(); setTimeout(fbSync,1500);
 }
 boot();
 })();
