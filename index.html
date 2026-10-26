@@ -171,6 +171,16 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 @media (min-width:860px){.hero{min-height:260px;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}.pic img{object-position:center 45%}}
 @media (max-width:520px){.hero{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);min-height:190px}.htxt{padding:16px 8px 16px 16px}}
 #sx{cursor:default}
+/* sinif blokları: üz qabığı şəkli */
+.gk .cov{display:block;width:100%;aspect-ratio:3/4;border-radius:clamp(8px,2vw,14px);overflow:hidden;background:var(--paper);box-shadow:0 6px 14px -10px rgba(30,40,100,.6);border:1px solid color-mix(in srgb,var(--c) 25%,transparent)}
+.gk .cov img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.gk .cov.aio{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:linear-gradient(160deg,#FFF3E6,#FFE2C4)}
+.gk .cov.aio .n{font-size:clamp(15px,4vw,26px);line-height:1.05;text-align:center}
+.gk .nrow{display:flex;align-items:baseline;justify-content:center;gap:5px;margin-top:4px}
+.gk .nrow .n{font-size:clamp(20px,5.6vw,34px)}
+.gk{padding:clamp(6px,1.6vw,12px) clamp(5px,1.4vw,10px) clamp(8px,2vw,14px)}
+.gk .go{margin-top:clamp(2px,.8vw,6px)}
+@media (min-width:760px){.grades{grid-template-columns:repeat(8,minmax(0,1fr))}}
 .thin4{display:grid;gap:8px}.thin4 .premtile{margin:0!important;padding:7px 12px!important;border-radius:14px!important}.thin4 .premtile .pi{font-size:22px!important}.thin4 .premtile b{font-size:16px!important;line-height:1.2}.thin4 .premtile small{font-size:12.5px!important;line-height:1.25}.thin4 .premtile em{font-size:10.5px!important;padding:2px 8px!important}
 .dn-top:empty{display:none}
 .gtile{background:linear-gradient(135deg,#EDE4FF,#D9C9FF)!important;border-color:#7C5CC4!important;color:#2E1A66!important;box-shadow:0 10px 24px -16px #7C5CC4!important}.gtile small{color:#4A3590!important}.gtile em{background:#2E1A66!important;color:#E4D9FF!important}
@@ -263,7 +273,7 @@ const ICONS={
  all:'<svg viewBox="0 0 32 32"><rect x="3" y="3" width="11" height="11" rx="3" fill="#F2994A"/><rect x="18" y="3" width="11" height="11" rx="3" fill="#4A86E8"/><rect x="3" y="18" width="11" height="11" rx="3" fill="#3DBBAA"/><rect x="18" y="18" width="11" height="11" rx="3" fill="#8E52E6"/></svg>',
  11:'<svg viewBox="0 0 32 32"><path d="M16 3.5l3.8 7.8 8.6 1.2-6.2 6 1.5 8.5L16 23l-7.7 4 1.5-8.5-6.2-6 8.6-1.2z" fill="#3DBBAA" stroke="#2EA393" stroke-width="1.2" stroke-linejoin="round"/></svg>'
 };
-$('grades').innerHTML=[...G,'all'].map(g=>g==='all'?`<button class="gk all" type="button" data-g="all" style="--c:var(--gall);--tc:var(--tall)" aria-label="All in One · bütün siniflər"><span class="ic">${ICONS.all}</span><span class="n">All in One</span><span class="s">Bütün siniflər</span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>`:`<button class="gk" type="button" data-g="${g}" style="${vars(g)}" aria-label="${g}-ci sinif · ${BOOK[g]}"><span class="ic">${ICONS[g]}</span><span class="n">${g}</span><span class="s">Sinif</span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>`).join('');
+$('grades').innerHTML=[...G,'all'].map(g=>g==='all'?`<button class="gk all" type="button" data-g="all" style="--c:var(--gall);--tc:var(--tall)" aria-label="All in One · bütün siniflər"><span class="cov aio"><span class="ic">${ICONS.all}</span><span class="n">All in One</span></span><span class="nrow"><span class="s">Bütün siniflər</span></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>`:`<button class="gk" type="button" data-g="${g}" style="${vars(g)}" aria-label="${g}-ci sinif · ${BOOK[g]}"><span class="cov"><img src="covers/g${g}.jpg" alt="" loading="lazy"></span><span class="nrow"><span class="n">${g}</span><span class="s">Sinif</span></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>`).join('');
 document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>openGrade(b.dataset.g==='all'?'all':+b.dataset.g));
 window.__hubHome=goHome;
 
