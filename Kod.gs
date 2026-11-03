@@ -137,6 +137,8 @@ const AB_FROM = 1793390400000, AB_DAYS = 3, AB_AGE = 25, AB_PAY_FROM = 179243656
 /* ⏳ 02.11.2026 20:40-dan (Bakı) sonra qoşulan HAMI (şagird və müəllim) 3 gün pulsuz istifadə edir, sonra avtomatik bloklanır.
    Müəllim panelində 💳 "Ödədi" basılanda avtomatik blok açılır və bir daha bloklanmır. */
 const AB_ALL = 1793637600000;
+/* 👑 Premium: əl ilə 👑 qoyulub, və ya 02.11.2026-dan sonra qoşulub, və ya 💳 ödəniş edib → Missions task-ları açıqdır */
+const premOf = v => isTrue(v[9]) || (ms(v[4]) || 0) >= AB_ALL || (ms(v[8]) || 0) >= AB_PAY_FROM;
 function abSheet() {
   const ss = SpreadsheetApp.getActive();
   let s = ss.getSheetByName('Avtoblok');
@@ -248,7 +250,7 @@ function userPing(o, now) {
   s.getRange(r, 2, 1, 3).setValues([[o.ad || val[1], o.soyad || val[2], o.rol || val[3]]]);
   s.getRange(r, 6).setValue(new Date(now)).setNumberFormat(DF);
   const ab = abCheck(s, r, val, o, now); /* ⏳ */
-  return { ok: true, blok: ab || isTrue(val[6]), prem: isTrue(val[9]) };
+  return { ok: true, blok: ab || isTrue(val[6]), prem: premOf(val) };
 }
 function userSet(o, now) {
   const s = usersSheet();
@@ -367,7 +369,7 @@ function doGet_(e) {
   if (p.key !== KEY) return out({ error: 'key' });
   if (p.a === 'users') return out({ rows: usersRows(usersSheet()) });
   if (p.a === 'fbs') return out({ rows: fbRows() });
-  if (p.a === 'plist') return out({ tels: usersRows(usersSheet()).filter(u => u.prem).map(u => u.tel) });
+  if (p.a === 'plist') return out({ tels: usersRows(usersSheet()).filter(u => u.prem || (+u.qeyd || 0) >= AB_ALL || (+u.elaqe || 0) >= AB_PAY_FROM).map(u => u.tel) });
   return out({ error: 'a' });
 }
 
@@ -409,7 +411,7 @@ function doPost(e) {
     }
     if (o.a === 'pq') { /* şagirdin premium yoxlaması (Missions) */
       const s = usersSheet(), r = userRow(s, o.tel);
-      return out({ ok: true, prem: r ? isTrue(s.getRange(r, 10).getValue()) : false });
+      return out({ ok: true, prem: r ? premOf(s.getRange(r, 1, 1, 10).getValues()[0]) : false });
     }
     if (o.key !== KEY) return out({ ok: false, error: 'key' });
     if (o.a === 'block' || o.a === 'elaqe' || o.a === 'premium') return out(userSet(o, now));
