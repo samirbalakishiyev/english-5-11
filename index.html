@@ -15,6 +15,8 @@
 .gbig em{font-style:normal;background:#FFD54A;color:#2E1A66;border-radius:999px;padding:4px 10px;font-weight:900;font-size:12px;letter-spacing:.06em}.gbig .ga{font-size:34px;font-weight:900;line-height:1}
 @keyframes gpulse{0%,100%{box-shadow:0 0 0 3px #D9C9FF,0 14px 28px -12px #4B2E9E}50%{box-shadow:0 0 0 7px #D9C9FF,0 14px 28px -12px #4B2E9E}}
 @media (prefers-reduced-motion:reduce){.gbig{animation:none}}
+.st5{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin:0 0 10px}.st5 button{border:2px solid var(--line);background:var(--card,#fff);color:inherit;border-radius:14px;padding:9px 6px;text-align:center;font:inherit;cursor:pointer}.st5 button small{display:block;font-size:12.5px;font-weight:800;opacity:.8}.st5 button b{display:block;font-size:24px;font-weight:900}.st5 button.on{border-color:#1F6FEB;box-shadow:0 0 0 2px #1F6FEB33}
+.njbtn{display:flex;align-items:center;gap:8px;width:100%;border:2.5px solid #1E8E4E;background:#E3F7EA;color:#0F5A2E;border-radius:14px;padding:12px 14px;font:inherit;font-weight:900;font-size:17px;cursor:pointer;margin:0 0 10px}.njbtn b{background:#1E8E4E;color:#fff;border-radius:999px;padding:1px 10px}.njbtn small{margin-left:auto;font-weight:700;opacity:.75}.njbtn.on{background:#1E8E4E;color:#fff}.njbtn.on b{background:#fff;color:#1E8E4E}
 </style>
 <style>#hubx{max-width:760px;margin:0 auto;padding:16px 16px 40px}
 #hprof:empty{display:none}
@@ -937,7 +939,7 @@ function waTplHTML(n){const t=waTpl();return `<details class="watpl"${TU.tpl?' o
 const waSent=tel=>lsGet('e511-wasent',{})[tel]||0;
 function waMark(tel,auto){const m=lsGet('e511-wasent',{});if(auto)m[tel]=Date.now();else if(m[tel])delete m[tel];else m[tel]=Date.now();lsSet('e511-wasent',m);setTimeout(()=>tUsers(),auto?400:0)}
 function waTplSave(del){const v=del?'':String(($('watpl')||{}).value||'').trim();lsSet('e511-watpl',v);TU.tpl=!v;toast(v?'💾 Şablon yadda saxlandı':'Şablon silindi');tUsers()}
-let TU={list:null,q:'',f:'',r:'',err:'',msg:'',px:new Set(),pxOk:false};
+let TU={list:null,q:'',f:'Yeni',r:'',err:'',msg:'',px:new Set(),pxOk:false};
 const OTHER_URL='https://script.google.com/macros/s/AKfycby-l8bfI4EZElFAOMaEOvYCJgJXMUX85Y2oI73CaSkS0oPZFpKkkKOHV_pNtYdk818/exec'; /* My New Vocabulary cədvəli: premium ortaqdır */
 function tKey(){
   screen(thdr('Cədvəl açarı','Bir dəfə daxil edin',tHome)+`<form class="tlogin" id="tkf"><input id="tkey" type="password" autocomplete="off" placeholder="Açar" value="${esc(lsGet('e511-tkey',''))}"><button class="hbtn" type="submit">Yadda saxla</button></form><p class="hnote">Açar Google Cədvəlin skriptindədir (KEY). Şagirdlərə verməyin.</p>`);
@@ -973,8 +975,8 @@ async function tUsers(reload){
   const td=L.filter(u=>now-(+u.son||0)<day).length,wk=L.filter(u=>now-(+u.son||0)<7*day).length;
   let h=thdr('İstifadəçilər',L.length+' nəfər',tHome);
   if(TU.err)h+=`<p class="perr">${esc(TU.err)}</p>`;
-  h+=`<div class="statrow">${[['Cəmi',L.length],['Tələbə',tl],['Müəllim',mu],['Bu gün',td],['Bu həftə',wk],['Bloklanıb',bl],['🆕 Yeni',L.filter(isNew).length],['💳 Ödəniş edib',L.filter(isPay).length],['👑 Premium',L.filter(isPrem).length]].map(([a,b])=>`<div><small>${a}</small><b>${b}</b></div>`).join('')}</div>`;
-  h+=`<div class="hrow" style="align-items:center;margin-bottom:10px"><button class="hbtn" data-act="reload">↻ Yenilə</button><b>Göstər:</b>${[['','👥 Hamısı ('+L.length+')'],['Müəllim','👩‍🏫 Müəllimlər ('+L.filter(u=>u.rol==='Müəllim').length+')'],['Tələbə','🎓 Şagirdlər ('+L.filter(u=>u.rol!=='Müəllim').length+')'],['Blok','🚫 Bloklananlar ('+L.filter(u=>u.blok).length+')'],['Pay','💳 Ödəniş edənlər ('+L.filter(isPaid).length+')'],['Yeni','🆕 Yeni qoşulanlar ('+L.filter(isJ).length+')'],['Prem','👑 Premium ('+L.filter(isPrem).length+')']].map(([f,l])=>`<button class="hbtn ${TU.f===f?'':'gh'}" data-f="${f}">${l}</button>`).join('')}</div>`;
+  h+=`<div class="st5">${[['','👥 Ümumi',L.length],['Müəllim','👩‍🏫 Müəllimlər',L.filter(u=>u.rol==='Müəllim').length],['Tələbə','🎓 Tələbələr',L.filter(u=>u.rol!=='Müəllim').length],['Blok','🚫 Bloklananlar',L.filter(u=>u.blok).length],['Pay','💳 Ödəniş edənlər',L.filter(isPaid).length]].map(([f,a,n])=>`<button type="button" class="${TU.f===f?'on':''}" data-f="${f}"><small>${a}</small><b>${n}</b></button>`).join('')}</div>`;
+  h+=`${(()=>{const n=L.filter(isJ).length,on=TU.f==='Yeni';return `<button type="button" class="njbtn${on?' on':''}" data-f="Yeni">🆕 Yeni qoşulanlar <b>${n}</b><small>son 3 gündə</small></button>`})()}<div class="hrow" style="margin-bottom:10px"><button class="hbtn" data-act="reload">↻ Yenilə</button></div>`;
   h+=waTplHTML(L.filter(u=>u.blok).length);
   h+=`<input class="tsearch" id="tsq" placeholder="Axtar: ad, soyad və ya nömrənin istənilən hissəsi (məs: 795 86)…" value="${esc(TU.q)}">`;
   const okF=u=>!TU.f||(TU.f==='Müəllim'?u.rol==='Müəllim':TU.f==='Tələbə'?u.rol!=='Müəllim':TU.f==='Blok'?u.blok:TU.f==='Pay'?isPaid(u):TU.f==='Yeni'?isJ(u):TU.f==='Prem'?isPrem(u):true);
