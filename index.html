@@ -607,7 +607,7 @@ function blokSet(v){
   else if(v===false&&lsGet('e511-blok',0)){lsSet('e511-blok',0);location.reload()}
 }
 function blockScreen(){
-  screen(`<section class="regbox" style="border-color:#D9364C;text-align:center"><div style="font-size:54px;line-height:1">🚫</div><h2 style="color:#D9364C">Hesabınız bloklanıb</h2><p style="font-size:19px;font-weight:700;margin:0">Ətraflı məlumat üçün Samir müəllimlə əlaqə saxlayın.</p><a class="hbtn wa" href="https://wa.me/994${SAMIR_TEL}" target="_blank" rel="noopener">${WAI}WhatsApp-da yaz</a><p class="hnote">📞 Samir Balakişiyev · <b style="user-select:all">055 795 86 25</b></p></section>`);
+  screen(`<section class="regbox" style="border-color:#D9364C;text-align:center"><div style="font-size:54px;line-height:1">📢</div><h2 style="color:inherit">Hörmətli istifadəçi!</h2><p style="margin:0 0 10px;font-size:18px;font-weight:700;line-height:1.5">1 illik abunə haqqı <b>10 AZN</b> təşkil edir.</p><p style="margin:0 0 10px;font-size:17px;line-height:1.5">Hesabınızın aktivliyini qorumaq və xidmətdən fasiləsiz istifadə etmək üçün bizimlə əlaqə saxlamağınız xahiş olunur.</p><p style="margin:0 0 16px;font-size:17px;font-weight:800">Təşəkkür edirik!</p><a class="hbtn wa" href="https://wa.me/994${SAMIR_TEL}" target="_blank" rel="noopener">${WAI}WhatsApp-da yaz</a><p class="hnote">📞 Samir Balakişiyev · <b style="user-select:all">055 795 86 25</b></p></section>`);
   const lb=document.querySelector('.hlock');if(lb)lb.style.display='none';
 }
 
